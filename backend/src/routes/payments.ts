@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
@@ -10,9 +10,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 // Create payment intent
-router.post('/create-intent', authenticate, async (req: AuthRequest, res) => {
+router.post('/create-intent', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { courseId } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },
@@ -38,7 +42,7 @@ router.post('/create-intent', authenticate, async (req: AuthRequest, res) => {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(course.price * 100), // Convert to cents
+      amount: Math.round(course.price * 100),
       currency: 'usd',
       metadata: {
         courseId,
@@ -106,3 +110,4 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 });
 
 export { router as paymentRoutes };
+

@@ -3,10 +3,15 @@ import { body, validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { sendEmail } from '../services/emailService';
+import { EmailService } from '../services/emailService';
 
 const router = Router();
 const prisma = new PrismaClient();
+const emailService = new EmailService();
+
+export const sendEmail = async (to: string, subject: string, html: string) => {
+  return await emailService.sendEmail(to, subject, html);
+};
 
 // Register
 router.post('/register', [
@@ -116,3 +121,4 @@ router.post('/login', [
 });
 
 export { router as authRoutes };
+

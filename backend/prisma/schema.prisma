@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   @default("STUDENT") // STUDENT, INSTRUCTOR, ADMIN
+  avatar    String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Student relations
+  enrollments Enrollment[]
+  reviews     Review[]
+
+  // Instructor relations
+  courses  Course[]
+  earnings Earning[]
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  thumbnail   String?
+  category    String
+  level       String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  status      String   @default("DRAFT")    // DRAFT, PUBLISHED, ARCHIVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  instructor   User   @relation(fields: [instructorId], references: [id])
+  instructorId String
+
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  reviews     Review[]
+
+  @@map("courses")
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  videoUrl    String
+  duration    Int // in seconds
+  order       Int
+  createdAt   DateTime @default(now())
+
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId String
+
+  progress LessonProgress[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  progress  Float    @default(0)
+
+  student   User   @relation(fields: [studentId], references: [id])
+  studentId String
+  course    Course @relation(fields: [courseId], references: [id])
+  courseId  String
+
+  lessonProgress LessonProgress[]
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id           String @id @default(cuid())
+  completed    Boolean @default(false)
+  watchedTime  Int     @default(0) // in seconds
+
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId String
+  lesson       Lesson     @relation(fields: [lessonId], references: [id])
+  lessonId     String
+
+  @@unique([enrollmentId, lessonId])
+  @@map("lesson_progress")
+}
+
+model Review {
+  id      String @id @default(cuid())
+  rating  Int
+  comment String?
+  createdAt DateTime @default(now())
+
+  student   User   @relation(fields: [studentId], references: [id])
+  studentId String
+  course    Course @relation(fields: [courseId], references: [id])
+  courseId  String
+
+  @@unique([studentId, courseId])
+  @@map("reviews")
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  amount    Float
+  stripeId  String   @unique
+  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  createdAt DateTime @default(now())
+
+  studentId String
+  courseId  String
+
+  @@map("payments")
+}
+
+model Earning {
+  id        String    @id @default(cuid())
+  amount    Float
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+
+  instructor   User   @relation(fields: [instructorId], references: [id])
+  instructorId String
+
+  @@map("earnings")
+}
+
+
+

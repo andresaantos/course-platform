@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth';
 import { courseRoutes } from './routes/courses';
 import { userRoutes } from './routes/users';
 import { instructorRoutes } from './routes/instructor';
+import { paymentRoutes } from './routes/payments';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,22 +26,29 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(express.json({ limit: '10mb' }));
+// Body parsing middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/instructor', instructorRoutes);
-
-// Test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Course Platform API is running!' });
-});
+app.use('/api/payments', paymentRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
 
 
